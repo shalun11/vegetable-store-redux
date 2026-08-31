@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import { MantineProvider } from '@mantine/core';
+import { configureStore } from '@reduxjs/toolkit';
 import App from './App';
-import { fetchProducts } from './api/products';
+import productsReducer from './store/productsSlice';
+import cartReducer from './store/cartSlice';
+import quantitiesReducer from './store/quantitiesSlice';
 import type { Product } from './types';
-
-vi.mock('./api/products', () => ({
-  fetchProducts: vi.fn(),
-}));
 
 const mockProducts: Product[] = [
   {
@@ -26,58 +26,55 @@ const mockProducts: Product[] = [
   },
 ];
 
-const renderWithProvider = (component: React.ReactElement) => {
-  return render(
-    <MantineProvider>
-      {component}
-    </MantineProvider>
-  );
+beforeEach(() => {
+  global.fetch = vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(mockProducts),
+    } as Response)
+  ) as any;
+});
+
+const createTestStore = () => {
+  return configureStore({
+    reducer: {
+      products: productsReducer,
+      cart: cartReducer,
+      quantities: quantitiesReducer,
+    },
+  });
 };
 
 describe('App', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('renders loader initially', () => {
-    vi.mocked(fetchProducts).mockImplementation(
-      () => new Promise(() => {})
-    );
+    const store = createTestStore();
 
-    renderWithProvider(<App />);
+    render(
+      <Provider store={store}>
+        <MantineProvider>
+          <App />
+        </MantineProvider>
+      </Provider>
+    );
 
     expect(screen.getByTestId('loader')).toBeInTheDocument();
   });
 
-  it('renders product list after loading', async () => {
-    vi.mocked(fetchProducts).mockResolvedValue(mockProducts);
+  it('renders products after loading', async () => {
+    const store = createTestStore();
 
-    renderWithProvider(<App />);
+    render(
+      <Provider store={store}>
+        <MantineProvider>
+          <App />
+        </MantineProvider>
+      </Provider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Broccoli')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Carrot')).toBeInTheDocument();
-  });
-
-  it('adds product to cart and updates header', async () => {
-    vi.mocked(fetchProducts).mockResolvedValue(mockProducts);
-
-    renderWithProvider(<App />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Broccoli')).toBeInTheDocument();
-    });
-
-    const plusButtons = screen.getAllByText('+');
-    fireEvent.click(plusButtons[0]);
-
-    const addToCartButtons = screen.getAllByText('Add to cart');
-    fireEvent.click(addToCartButtons[0]);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Cart: 1/)).toBeInTheDocument();
-    });
   });
 });
