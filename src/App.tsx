@@ -1,71 +1,49 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Header } from './components/Header/Header';
 import { ProductList } from './components/ProductList/ProductList';
 import { Loader } from './components/Loader/Loader';
-import { fetchProducts } from './api/products';
-import type { Product, CartItem } from './types';
+import { useAppDispatch, useAppSelector } from './store/hooks';
+import { fetchProducts } from './store/productsSlice';
+import { addToCart, removeFromCart, updateCartQuantity } from './store/cartSlice';
+import { setQuantity, resetQuantity } from './store/quantitiesSlice';
+import {
+  selectProducts,
+  selectProductsLoading,
+  selectCartItems,
+  selectCartItemsCount,
+  selectQuantities,
+} from './store/selectors';
 
 function App() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const dispatch = useAppDispatch();
+  const products = useAppSelector(selectProducts);
+  const loading = useAppSelector(selectProductsLoading);
+  const cartItems = useAppSelector(selectCartItems);
+  const cartItemsCount = useAppSelector(selectCartItemsCount);
+  const quantities = useAppSelector(selectQuantities);
 
   useEffect(() => {
-    fetchProducts()
-      .then((data) => {
-        setProducts(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error loading products:', error);
-        setLoading(false);
-      });
-  }, []);
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
   const handleQuantityChange = (productId: number, quantity: number) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [productId]: quantity,
-    }));
+    dispatch(setQuantity({ productId, quantity }));
   };
 
-  const handleAddToCart = (product: Product, quantity: number) => {
+  const handleAddToCart = (product: any, quantity: number) => {
     if (quantity === 0) return;
 
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      } else {
-        return [...prevCart, { ...product, quantity }];
-      }
-    });
-
-    setQuantities((prev) => ({
-      ...prev,
-      [product.id]: 0,
-    }));
+    dispatch(addToCart({ product, quantity }));
+    dispatch(resetQuantity(product.id));
   };
 
   const handleRemoveFromCart = (productId: number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+    dispatch(removeFromCart(productId));
   };
 
   const handleCartQuantityChange = (productId: number, quantity: number) => {
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      )
-    );
+    dispatch(updateCartQuantity({ productId, quantity }));
   };
-
-  const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   if (loading) {
     return <Loader />;
@@ -76,7 +54,7 @@ function App() {
       <div style={{ position: 'sticky', top: 0, zIndex: 100 }}>
         <Header
           cartItemsCount={cartItemsCount}
-          cartItems={cart}
+          cartItems={cartItems}
           onRemoveItem={handleRemoveFromCart}
           onQuantityChange={handleCartQuantityChange}
         />

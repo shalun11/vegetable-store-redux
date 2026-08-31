@@ -1,16 +1,18 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { MantineProvider, createTheme } from '@mantine/core'
-import '@mantine/core/styles.css'
-import App from './App.tsx'
-import './index.css'
-
-const theme = createTheme({})
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { MantineProvider } from '@mantine/core';
+import '@mantine/core/styles.css';
+import { store } from './store/store';
+import App from './App';
+import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <MantineProvider theme={theme}>
-      <App />
-    </MantineProvider>
-  </React.StrictMode>,
-)
+    <Provider store={store}>
+      <MantineProvider>
+        <App />
+      </MantineProvider>
+    </Provider>
+  </React.StrictMode>
+);
