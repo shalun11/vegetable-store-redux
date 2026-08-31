@@ -27,7 +27,7 @@ const mockProducts: Product[] = [
 ];
 
 beforeEach(() => {
-  global.fetch = vi.fn(() =>
+  (globalThis as any).fetch = vi.fn(() =>
     Promise.resolve({
       ok: true,
       json: () => Promise.resolve(mockProducts),
