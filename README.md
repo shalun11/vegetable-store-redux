@@ -1,2 +1,6 @@
-https://shalun11.github.io/vegetable-store-redux/
+## P.S У меня лично не грузит без впн
+
+## Демо
+https://vegetable-store-redux.netlify.app/
+
 
